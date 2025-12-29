@@ -1,0 +1,32 @@
+=== Recent Email Logs with ERRORS ===
+
+ID: 9
+Email: cyberhackrafi@gmail.com
+Created: 2025-12-08 20:19:28.989277+00:00
+Status: failed
+ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-29dae49cbdfsm132502965ad.1 - gsmtp')
+--------------------------------------------------
+ID: 8
+Email: cyberhackrafi@gmail.com
+Created: 2025-12-08 20:13:47.320466+00:00
+Status: failed
+ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-29dae99f011sm135233615ad.59 - gsmtp')
+--------------------------------------------------
+ID: 7
+Email: cyberhackrafi@gmail.com
+Created: 2025-12-08 20:13:29.230010+00:00
+Status: failed
+ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-7e2a006547fsm13843586b3a.21 - gsmtp')
+--------------------------------------------------
+ID: 5
+Email: cyberhackrafi@gmail.com
+Created: 2025-12-08 20:08:00.375706+00:00
+Status: failed
+ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-29daeae69dasm134617725ad.91 - gsmtp')
+--------------------------------------------------
+ID: 4
+Email: cyberhackrafi@gmail.com
+Created: 2025-12-08 20:05:00.367862+00:00
+Status: failed
+ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-7e29f2ece66sm14020497b3a.13 - gsmtp')
+--------------------------------------------------

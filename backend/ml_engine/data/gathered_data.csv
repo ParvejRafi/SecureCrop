@@ -1,0 +1,53 @@
+﻿N,P,K,temperature ,humidity,ph,label
+30,37,80,26,100%,6.5,Rich
+5,5,12,30,45%,7,Banana
+5,5,12,30,45%,7,Pineapple 
+3,4,8,29,45%,6.5,Coconut
+14,16,36,29,41%,5.6,Spinach
+3,3,7,29,45%,7,Sugarcane
+10,12,28,30,15%,4.7,Pomelo
+3,5,10,28,75%,5.2,Pok Sunkis limao
+11,13,29,29,75%,5.6,Okra
+2,3,6,31,15%,4.6,Chinese Limao
+5,5,12,30,75%,6,Roselle
+4,5,11,29,75%,5.2,Philipino Water Apple
+9,11,24,32,75%,4.5,Bilimbi
+2,3,6,32,45%,7,Water Apple TTC
+6,7,16,29,15%,4.5,Durian
+5,7,13,27,95%,4.5,Durian
+19,23,52,28,85%,4.7,Durian Blenda
+9,11,25,29,95%,4.5,Pomelo
+19,23,52,28,95%,4.5,Moringa
+11,13,29,29,95%,5.4,Baccaurea Motleyana
+18,21,47,31,95%,4.7,Papaya
+3,4,8,29,15,4.5,Asam Kandis
+7,8,18,29,75%,4.5,Hog Apple
+13,16,36,29,75%,4.5,Miracle Berry
+11,13,29,30,15%,6.9,Durian Montong
+7,8,18,29,70%,5.4,Black Thorn Durian
+5,6,14,29,15%,4.5,Durian IOI
+5,7,14,30,45%,7,nam Dok Mai Mango
+12,15,35,29,71%,4.5,Cristal Wax Apple
+10,12,26,29,70%,4.5,Harum manis Mango
+14,16,38,30,75%,4.5,Lemon
+1,4,7,33,70%,5.2,Grape
+12,13,30,33,70%,6.2,Jack-Fruit
+41,48,109,34,70%,5.8,Guava
+83,98,222,35,70%,5.8,Pomelo
+9,11,25,34,70%,4.7,Papaya
+3,2,4,32,30%,6.5,White stripped Guava
+98,114,263,33,70%,5.2,Cashew Nut
+48,56,125,31,70%,5.2,Longan
+10,11,25,32,25%,6.9,Mangosteen
+18,21,47,31,15%,5.2,Round Bilimbi
+3,4,9,32,70%,5.9,King Jack-Fruit
+18,21,46,32,70%,5.1,Rambutan
+13,16,36,31,65%,5.1,Water Lily Mango
+5,5,11,30,70%,5.8,Ciko Mega Mango
+4,2,4,33,70%,5.5,Asam Gelugur
+17,20,46,31,70%,6.2,Brazilian Grape
+62,72,166,32,70%,6.2,Hog Apple
+62,74,168,30,70%,5,Durian
+28,32,74,32,70%,5,Island Lychee
+1,1,2,32,15%,4.5,Baccaurea Motleyana
+4,4,9,32,70%,4.5,Jamun

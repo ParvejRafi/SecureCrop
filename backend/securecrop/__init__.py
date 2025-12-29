@@ -1,0 +1,1 @@
+# SecureCrop Django Project

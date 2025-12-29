@@ -1,0 +1,16 @@
+"""
+URL configuration for accounts app.
+"""
+from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
+from .views import RegisterView, LoginView, CurrentUserView, ProfileView, ProfilePictureUploadView
+
+urlpatterns = [
+    path('register/', RegisterView.as_view(), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('me/', CurrentUserView.as_view(), name='current-user'),
+    path('profile/', ProfileView.as_view(), name='profile'),
+    path('profile/picture/', ProfilePictureUploadView.as_view(), name='profile-picture'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+]
+
