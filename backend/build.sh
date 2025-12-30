@@ -36,9 +36,10 @@ import os
 
 email = os.environ.get('DJANGO_SUPERUSER_EMAIL')
 password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
+username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
 
 if email and password and not User.objects.filter(email=email).exists():
-    User.objects.create_superuser(email=email, password=password)
+    User.objects.create_superuser(email=email, username=username, password=password)
     print(f'Superuser {email} created successfully!')
 else:
     print('Superuser already exists or credentials not provided.')
