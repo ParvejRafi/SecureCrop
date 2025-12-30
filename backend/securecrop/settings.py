@@ -141,9 +141,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # WhiteNoise configuration for serving static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Additional directories for static files (frontend build assets)
+# Additional directories for static files (frontend build)
+# Point to dist root so assets/ subdirectory structure is preserved
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR.parent, 'frontend', 'dist', 'assets'),
+    os.path.join(BASE_DIR.parent, 'frontend', 'dist'),
 ]
 
 # Media files
