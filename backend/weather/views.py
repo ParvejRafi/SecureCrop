@@ -28,15 +28,29 @@ class CurrentWeatherView(APIView):
         lat = request.query_params.get('lat', 3.1390)  # Default: Kuala Lumpur
         lon = request.query_params.get('lon', 101.6869)
         
+        # Log API key status (first 10 chars only for security)
+        api_key = OPENWEATHER_API_KEY
+        print(f"Weather API Key: {api_key[:10]}... (length: {len(api_key)})")
+        
+        if not api_key or api_key == 'YOUR_API_KEY_HERE':
+            return Response({
+                'error': 'Weather API key not configured',
+                'detail': 'Please set OPENWEATHER_API_KEY in environment variables'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         try:
             url = f"https://api.openweathermap.org/data/2.5/weather"
             params = {
                 'lat': lat,
                 'lon': lon,
-                'appid': OPENWEATHER_API_KEY,
+                'appid': api_key,
                 'units': 'metric'
             }
-            response = requests.get(url, params=params)
+            
+            print(f"Fetching weather for lat={lat}, lon={lon}")
+            response = requests.get(url, params=params, timeout=10)
+            
+            print(f"Weather API response status: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
@@ -72,8 +86,20 @@ class CurrentWeatherView(APIView):
                     'timestamp': data['dt']
                 })
             else:
-                return Response({'error': 'Failed to fetch weather data'}, status=response.status_code)
+                error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
+                print(f"Weather API error: {response.status_code} - {error_data}")
+                return Response({
+                    'error': 'Failed to fetch weather data',
+                    'status_code': response.status_code,
+                    'detail': error_data.get('message', 'Unknown error')
+                }, status=response.status_code)
+        except requests.Timeout:
+            print("Weather API timeout")
+            return Response({'error': 'Weather service timeout'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
         except Exception as e:
+            import traceback
+            print(f"Weather API exception: {e}")
+            print(traceback.format_exc())
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
