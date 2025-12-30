@@ -2,7 +2,8 @@
 URL configuration for SecureCrop project.
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from .views import IndexView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,4 +16,7 @@ urlpatterns = [
     path('api/market/', include('market_linkage.urls')),
     path('api/contact/', include('contact.urls')),
     path('api/notifications/', include('notifications.urls')),
+    
+    # Catch-all pattern to serve React app for all other routes
+    re_path(r'^.*$', IndexView.as_view(), name='index'),
 ]
