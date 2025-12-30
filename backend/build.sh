@@ -5,7 +5,7 @@ set -o errexit
 # Navigate to project root
 cd "$(dirname "$0")/.."
 
-# Build Frontend
+# Build Frontend (v1.0.1 - Fixed localhost URLs)
 echo "Building frontend..."
 cd frontend
 npm install
