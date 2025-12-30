@@ -123,7 +123,7 @@ export const WeatherDashboard: React.FC = () => {
       };
 
       await axios.put(
-        'http://127.0.0.1:8000/api/auth/profile/',
+        '/api/auth/profile/',
         updatedProfile,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -204,7 +204,7 @@ export const WeatherDashboard: React.FC = () => {
         return;
       }
 
-      const response = await axios.get('http://127.0.0.1:8000/api/auth/profile/', {
+      const response = await axios.get('/api/auth/profile/', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

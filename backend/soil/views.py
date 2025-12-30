@@ -45,6 +45,9 @@ class SoilInputCreateView(generics.CreateAPIView):
         try:
             cyber_result = pre_ml_checks(soil_data, request.user)
         except Exception as e:
+            import traceback
+            print(f"Cyber check error: {e}")
+            print(traceback.format_exc())
             return Response({
                 'error': 'Security validation failed',
                 'detail': str(e)
@@ -67,6 +70,9 @@ class SoilInputCreateView(generics.CreateAPIView):
         try:
             recommendation = create_recommendation_for_input(soil_input)
         except Exception as e:
+            import traceback
+            print(f"Recommendation error: {e}")
+            print(traceback.format_exc())
             return Response({
                 'error': 'Failed to generate recommendation',
                 'detail': str(e)
