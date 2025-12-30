@@ -173,7 +173,11 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all in development
 if not DEBUG:
     # In production, specify allowed origins
-    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+    cors_origins = os.getenv('CORS_ALLOWED_ORIGINS', '')
+    if cors_origins:
+        CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(',') if origin.strip()]
+    else:
+        CORS_ALLOW_ALL_ORIGINS = True  # Allow all if not specified
 CORS_ALLOW_CREDENTIALS = True
 
 # OpenWeatherMap API Key
