@@ -374,7 +374,25 @@ def send_weather_alerts_to_all_users(admin_user):
         created_by=admin_user,
         target_all_users=True
     )
-    _send_emails_to_specific_users_in_background(users, alert):
+    
+    # Start background thread to send emails
+    thread = threading.Thread(
+        target=_send_emails_in_background,
+        args=(list(users), alert),
+        daemon=True
+    )
+    thread.start()
+    
+    return {
+        'success': True,
+        'message': f'Weather alerts are being sent to {users.count()} farmers in the background',
+        'alert_id': alert.id,
+        'total': users.count(),
+        'status': 'processing'
+    }
+
+
+def _send_emails_to_specific_users_in_background(users, alert):
     """
     Background task to send emails to specific users.
     """
