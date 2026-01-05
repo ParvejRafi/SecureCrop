@@ -4,6 +4,7 @@ Fetches real-time weather data for each user's location and sends personalized a
 """
 import requests
 import os
+import threading
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 from django.conf import settings
@@ -312,15 +313,40 @@ def send_automated_weather_alert(user, alert_notification=None):
         return email_log
 
 
+def _send_emails_in_background(users, alert):
+    """
+    Background task to send emails to avoid worker timeout.
+    """
+    sent_count = 0
+    failed_count = 0
+    
+    for user in users:
+        try:
+            result = send_automated_weather_alert(user, alert)
+            if result and result.status == 'sent':
+                sent_count += 1
+            else:
+                failed_count += 1
+        except Exception as e:
+            print(f"Error sending to {user.email}: {e}")
+            failed_count += 1
+    
+    # Update alert with counts
+    alert.emails_sent_count = sent_count
+    alert.save()
+    print(f"Email sending completed: {sent_count} sent, {failed_count} failed")
+
+
 def send_weather_alerts_to_all_users(admin_user):
     """
     Send automated weather alerts to all users with email alerts enabled and location set.
+    Uses background threading to avoid worker timeout.
     
     Args:
         admin_user: Admin user who triggered the send
         
     Returns:
-        dict: Summary of sent emails
+        dict: Summary of email sending initiation
     """
     # Get users with email alerts enabled and location set
     users = User.objects.filter(
@@ -348,41 +374,41 @@ def send_weather_alerts_to_all_users(admin_user):
         created_by=admin_user,
         target_all_users=True
     )
-    
+    _send_emails_to_specific_users_in_background(users, alert):
+    """
+    Background task to send emails to specific users.
+    """
     sent_count = 0
     failed_count = 0
     
     for user in users:
-        result = send_automated_weather_alert(user, alert)
-        if result and result.status == 'sent':
-            sent_count += 1
-        else:
+        try:
+            result = send_automated_weather_alert(user, alert)
+            if result and result.status == 'sent':
+                sent_count += 1
+            else:
+                failed_count += 1
+        except Exception as e:
+            print(f"Error sending to {user.email}: {e}")
             failed_count += 1
     
     # Update alert with counts
     alert.emails_sent_count = sent_count
     alert.save()
-    
-    return {
-        'success': True,
-        'message': f'Weather alerts sent to {sent_count} farmers',
-        'alert_id': alert.id,
-        'total': users.count(),
-        'sent': sent_count,
-        'failed': failed_count
-    }
+    print(f"Targeted email sending completed: {sent_count} sent, {failed_count} failed")
 
 
 def send_weather_alerts_to_specific_users(admin_user, user_ids):
     """
     Send automated weather alerts to specific users.
+    Uses background threading to avoid worker timeout.
     
     Args:
         admin_user: Admin user who triggered the send
         user_ids: List of user IDs
         
     Returns:
-        dict: Summary of sent emails
+        dict: Summary of email sending initiation
     """
     users = User.objects.filter(
         id__in=user_ids,
@@ -411,10 +437,24 @@ def send_weather_alerts_to_specific_users(admin_user, user_ids):
         target_all_users=False
     )
     
-    sent_count = 0
-    failed_count = 0
+    # Set target users
+    alert.target_users.set(users)
+    alert.save()
     
-    for user in users:
+    # Start background thread to send emails
+    thread = threading.Thread(
+        target=_send_emails_to_specific_users_in_background,
+        args=(list(users), alert),
+        daemon=True
+    )
+    thread.start()
+    
+    return {
+        'success': True,
+        'message': f'Weather alerts are being sent to {users.count()} farmers in the background',
+        'alert_id': alert.id,
+        'total': users.count(),
+        'status': 'processing'
         result = send_automated_weather_alert(user, alert)
         if result and result.status == 'sent':
             sent_count += 1
