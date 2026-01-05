@@ -27,7 +27,7 @@ python manage.py collectstatic --no-input
 echo "Running migrations..."
 python manage.py migrate
 
-# Create superuser automatically if environment variables are set
+# Create or update superuser automatically if environment variables are set
 if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
     echo "Checking for superuser..."
     python manage.py shell << END
@@ -38,11 +38,21 @@ email = os.environ.get('DJANGO_SUPERUSER_EMAIL')
 password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
 username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
 
-if email and password and not User.objects.filter(email=email).exists():
-    User.objects.create_superuser(email=email, username=username, password=password)
-    print(f'Superuser {email} created successfully!')
+if email and password:
+    if not User.objects.filter(email=email).exists():
+        User.objects.create_superuser(email=email, username=username, password=password)
+        print(f'Superuser {email} created successfully!')
+    else:
+        # Update existing user
+        user = User.objects.get(email=email)
+        user.set_password(password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.role = 'ADMIN'
+        user.save()
+        print(f'Superuser {email} password updated successfully!')
 else:
-    print('Superuser already exists or credentials not provided.')
+    print('Credentials not provided.')
 END
 fi
 
