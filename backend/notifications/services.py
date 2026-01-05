@@ -473,22 +473,4 @@ def send_weather_alerts_to_specific_users(admin_user, user_ids):
         'alert_id': alert.id,
         'total': users.count(),
         'status': 'processing'
-        result = send_automated_weather_alert(user, alert)
-        if result and result.status == 'sent':
-            sent_count += 1
-        else:
-            failed_count += 1
-    
-    # Update alert
-    alert.emails_sent_count = sent_count
-    alert.target_users.set(users)
-    alert.save()
-    
-    return {
-        'success': True,
-        'message': f'Weather alerts sent to {sent_count} farmers',
-        'alert_id': alert.id,
-        'total': users.count(),
-        'sent': sent_count,
-        'failed': failed_count
     }
