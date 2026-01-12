@@ -27,6 +27,10 @@ python manage.py collectstatic --no-input
 echo "Running migrations..."
 python manage.py migrate
 
+# Train ML models
+echo "Training ML models..."
+python ml_engine/train_model.py
+
 # Create or update superuser automatically if environment variables are set
 if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
     echo "Checking for superuser..."
