@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { contactAPI } from '../services/api';
 import {
   Sprout,
   Phone,
@@ -60,22 +61,7 @@ const ContactUs: React.FC = () => {
     setSubmitStatus('idle');
 
     try {
-      const response = await fetch('/api/contact/inquiries/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error submitting inquiry:', errorData);
-        setSubmitStatus('error');
-        return;
-      }
-
-      const data = await response.json();
+      const data = await contactAPI.submitInquiry(formData);
       console.log('Inquiry submitted successfully:', data);
       setSubmitStatus('success');
 
@@ -92,7 +78,7 @@ const ContactUs: React.FC = () => {
         setSubmitStatus('idle');
       }, 3000);
     } catch (error) {
-      console.error('Network error:', error);
+      console.error('Error submitting inquiry:', error);
       setSubmitStatus('error');
     }
   };

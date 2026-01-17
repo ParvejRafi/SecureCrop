@@ -198,6 +198,11 @@ export const notificationsAPI = {
 
 // Contact Inquiries API (Admin)
 export const contactAPI = {
+  submitInquiry: async (data: { name: string; email: string; phone: string; subject: string; message: string; category: string }) => {
+    const response = await api.post('/contact/inquiries/', data);
+    return response.data;
+  },
+
   getList: async (filters?: { status?: string; category?: string }) => {
     const response = await api.get('/contact/admin/list/', { params: filters });
     return response.data;

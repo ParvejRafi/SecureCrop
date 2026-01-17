@@ -16,14 +16,15 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [soilInputs, cyberStats, feedbackStats] = await Promise.all([
+        const [users, soilInputs, cyberStats, feedbackStats] = await Promise.all([
+          adminAPI.getAllUsers(),
           adminAPI.getAllSoilInputs(),
           adminAPI.getCyberLogStats(),
           feedbackAPI.getFeedbackStats(),
         ]);
 
         setStats({
-          totalUsers: new Set(soilInputs.map(s => s.user)).size,
+          totalUsers: users.length,
           totalInputs: soilInputs.length,
           totalAnomalies: cyberStats.anomalies_detected,
           averageRating: feedbackStats.average_rating || 0,
