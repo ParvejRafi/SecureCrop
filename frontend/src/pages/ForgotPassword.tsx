@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Input, Button } from '../components/UI';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import api from '../services/api';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -19,7 +17,7 @@ const ForgotPassword: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/password-reset/`, {
+      const response = await api.post('/auth/password-reset/', {
         email: email.toLowerCase(),
       });
 

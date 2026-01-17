@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input, Button } from '../components/UI';
 import { Lock, ArrowLeft, AlertCircle, CheckCircle, Loader } from 'lucide-react';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import api from '../services/api';
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -30,7 +28,7 @@ const ResetPassword: React.FC = () => {
       }
 
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/auth/password-reset/verify/`, {
+        const response = await api.get('/auth/password-reset/verify/', {
           params: { token }
         });
 
@@ -69,7 +67,7 @@ const ResetPassword: React.FC = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/password-reset/confirm/`, {
+      const response = await api.post('/auth/password-reset/confirm/', {
         token,
         new_password: newPassword,
         new_password_confirm: confirmPassword,
