@@ -178,7 +178,7 @@ export const MarketLinkage: React.FC = () => {
       const token = localStorage.getItem('access_token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await axios.get(`${API_URL}/api/market/search/all/`, {
+      const response = await axios.get(`${API_URL}/market/search/all/`, {
         params: { lat, lon, radius },
         headers,
       });
