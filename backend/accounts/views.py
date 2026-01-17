@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from .models import User, PasswordResetToken
+from .permissions import IsAdminUser
 from .serializers import (
     UserSerializer, 
     RegisterSerializer, 
@@ -409,4 +410,40 @@ class PasswordResetVerifyTokenView(APIView):
                 'valid': False,
                 'error': 'Invalid token'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminUserListView(APIView):
+    """
+    API endpoint for admin to get all users.
+    
+    GET /api/auth/admin/users/
+    - Returns: list of all users with their details
+    """
+    permission_classes = (IsAuthenticated, IsAdminUser)
+    
+    def get(self, request):
+        users = User.objects.all().order_by('-created_at')
+        
+        users_data = []
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'is_active': user.is_active,
+                'created_at': user.created_at,
+                'last_login': user.last_login,
+                'phone_number': user.phone_number,
+                'location_lat': user.location_lat,
+                'location_lon': user.location_lon,
+                'receive_email_alerts': user.receive_email_alerts,
+                'receive_sms_alerts': user.receive_sms_alerts,
+            })
+        
+        return Response({
+            'count': users.count(),
+            'results': users_data
+        }, status=status.HTTP_200_OK)
+
 

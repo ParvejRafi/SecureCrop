@@ -187,7 +187,27 @@ if not DEBUG:
         CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(',') if origin.strip()]
     else:
         CORS_ALLOW_ALL_ORIGINS = True  # Allow all if not specified
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # OpenWeatherMap API Key
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '')

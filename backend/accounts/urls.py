@@ -11,7 +11,8 @@ from .views import (
     ProfilePictureUploadView,
     PasswordResetRequestView,
     PasswordResetConfirmView,
-    PasswordResetVerifyTokenView
+    PasswordResetVerifyTokenView,
+    AdminUserListView
 )
 
 urlpatterns = [
@@ -26,5 +27,8 @@ urlpatterns = [
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset-request'),
     path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
     path('password-reset/verify/', PasswordResetVerifyTokenView.as_view(), name='password-reset-verify'),
+    
+    # Admin URLs
+    path('admin/users/', AdminUserListView.as_view(), name='admin-users'),
 ]
 

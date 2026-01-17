@@ -140,6 +140,12 @@ export const feedbackAPI = {
 
 // Admin APIs
 export const adminAPI = {
+  // Users
+  getAllUsers: async () => {
+    const response = await api.get('/auth/admin/users/');
+    return response.data.results || response.data;
+  },
+  
   // Cyber Logs
   getCyberLogs: async (params?: { anomaly_detected?: boolean; integrity_status?: string }): Promise<CyberLog[]> => {
     const response = await api.get('/admin/logs/cyber/', { params });
