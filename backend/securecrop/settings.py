@@ -202,6 +202,9 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@securecrop.com')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@securecrop.com')
 
+# Frontend URL for password reset links
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
 # Infobip WhatsApp Configuration
 INFOBIP_API_KEY = os.getenv('INFOBIP_API_KEY', '')
 INFOBIP_BASE_URL = os.getenv('INFOBIP_BASE_URL', '')

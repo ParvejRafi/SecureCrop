@@ -80,3 +80,41 @@ class RegisterSerializer(serializers.ModelSerializer):
             role='USER'  # Default role for new registrations
         )
         return user
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for requesting password reset."""
+    email = serializers.EmailField(required=True)
+    
+    def validate_email(self, value):
+        """Validate that email exists in the system."""
+        return value.lower()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for confirming password reset with token."""
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(
+        write_only=True, 
+        required=True, 
+        style={'input_type': 'password'}
+    )
+    new_password_confirm = serializers.CharField(
+        write_only=True, 
+        required=True, 
+        style={'input_type': 'password'}
+    )
+    
+    def validate(self, attrs):
+        """Validate password match and strength."""
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({"new_password": "Password fields didn't match."})
+        
+        # Validate password strength using Django validators
+        try:
+            validate_password(attrs['new_password'])
+        except ValidationError as e:
+            raise serializers.ValidationError({"new_password": list(e.messages)})
+        
+        return attrs
+

@@ -6,6 +6,8 @@ import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/user/Dashboard';
 import SoilInput from './pages/user/SoilInput';
 import History from './pages/user/History';
@@ -34,6 +36,8 @@ function App() {
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* User Routes */}
           <Route path="/user/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />

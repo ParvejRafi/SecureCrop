@@ -7,8 +7,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User
-from .serializers import UserSerializer, RegisterSerializer
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+from .models import User, PasswordResetToken
+from .serializers import (
+    UserSerializer, 
+    RegisterSerializer, 
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -239,3 +247,166 @@ class ProfilePictureUploadView(APIView):
         return Response({
             'error': 'No profile picture to remove'
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetRequestView(APIView):
+    """
+    API endpoint for requesting password reset.
+    
+    POST /api/auth/password-reset/
+    - Sends password reset email with token link
+    - Requires: email
+    - Returns: success message
+    """
+    permission_classes = (AllowAny,)
+    
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        
+        try:
+            user = User.objects.get(email=email, is_active=True)
+            
+            # Invalidate old tokens for this user
+            PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
+            
+            # Create new reset token
+            reset_token = PasswordResetToken.create_token(user)
+            
+            # Build reset link
+            frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:5173'
+            reset_link = f"{frontend_url}/reset-password?token={reset_token.token}"
+            
+            # Send email
+            try:
+                send_mail(
+                    subject='Password Reset Request - SecureCrop',
+                    message=f"""
+Hello {user.username},
+
+You have requested to reset your password for your SecureCrop account.
+
+Click the link below to reset your password:
+{reset_link}
+
+This link will expire in 1 hour.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+SecureCrop Team
+                    """,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                # Log error but don't reveal it to user
+                print(f"Error sending password reset email: {e}")
+                # In development, print the reset link
+                if settings.DEBUG:
+                    print(f"Password reset link: {reset_link}")
+            
+            # Always return success to prevent email enumeration
+            return Response({
+                'message': 'If your email is registered, you will receive a password reset link shortly.',
+                'debug_link': reset_link if settings.DEBUG else None  # Only in development
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            # Return same message to prevent email enumeration
+            return Response({
+                'message': 'If your email is registered, you will receive a password reset link shortly.'
+            }, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(APIView):
+    """
+    API endpoint for confirming password reset with token.
+    
+    POST /api/auth/password-reset/confirm/
+    - Resets password using valid token
+    - Requires: token, new_password, new_password_confirm
+    - Returns: success message
+    """
+    permission_classes = (AllowAny,)
+    
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        token_string = serializer.validated_data['token']
+        new_password = serializer.validated_data['new_password']
+        
+        try:
+            # Get the reset token
+            reset_token = PasswordResetToken.objects.get(token=token_string)
+            
+            # Check if token is valid
+            if not reset_token.is_valid():
+                return Response({
+                    'error': 'Invalid or expired reset token. Please request a new password reset.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Reset the password
+            user = reset_token.user
+            user.set_password(new_password)
+            user.save()
+            
+            # Mark token as used
+            reset_token.used = True
+            reset_token.save()
+            
+            # Invalidate other tokens for this user
+            PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
+            
+            return Response({
+                'message': 'Password reset successfully. You can now login with your new password.'
+            }, status=status.HTTP_200_OK)
+            
+        except PasswordResetToken.DoesNotExist:
+            return Response({
+                'error': 'Invalid reset token. Please request a new password reset.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetVerifyTokenView(APIView):
+    """
+    API endpoint for verifying password reset token validity.
+    
+    GET /api/auth/password-reset/verify/?token=xxx
+    - Checks if token is valid and not expired
+    - Returns: token validity status
+    """
+    permission_classes = (AllowAny,)
+    
+    def get(self, request):
+        token_string = request.query_params.get('token')
+        
+        if not token_string:
+            return Response({
+                'error': 'Token parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            reset_token = PasswordResetToken.objects.get(token=token_string)
+            
+            if reset_token.is_valid():
+                return Response({
+                    'valid': True,
+                    'email': reset_token.user.email
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'valid': False,
+                    'error': 'Token has expired or been used'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except PasswordResetToken.DoesNotExist:
+            return Response({
+                'valid': False,
+                'error': 'Invalid token'
+            }, status=status.HTTP_400_BAD_REQUEST)
+

@@ -5,6 +5,8 @@ Implements role-based access control (RBAC) with USER and ADMIN roles.
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
+import secrets
+from datetime import timedelta
 
 
 class UserManager(BaseUserManager):
@@ -106,4 +108,44 @@ class User(AbstractBaseUser, PermissionsMixin):
     def can_receive_sms_alerts(self):
         """Check if user can receive SMS alerts."""
         return self.is_active and self.receive_sms_alerts and self.phone_number
+
+
+class PasswordResetToken(models.Model):
+    """
+    Model for storing password reset tokens.
+    Tokens expire after 1 hour for security.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
+    token = models.CharField(max_length=100, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'password_reset_tokens'
+        verbose_name = 'Password Reset Token'
+        verbose_name_plural = 'Password Reset Tokens'
+    
+    def __str__(self):
+        return f"Reset token for {self.user.email} - {'Used' if self.used else 'Active'}"
+    
+    def is_valid(self):
+        """Check if token is still valid (not expired and not used)."""
+        return not self.used and timezone.now() < self.expires_at
+    
+    @classmethod
+    def create_token(cls, user):
+        """Create a new password reset token for a user."""
+        # Generate a secure random token
+        token = secrets.token_urlsafe(32)
+        
+        # Set expiration to 1 hour from now
+        expires_at = timezone.now() + timedelta(hours=1)
+        
+        # Create and return the token
+        return cls.objects.create(
+            user=user,
+            token=token,
+            expires_at=expires_at
+        )
 
