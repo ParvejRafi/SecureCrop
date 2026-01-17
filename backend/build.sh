@@ -8,6 +8,10 @@ cd "$(dirname "$0")/.."
 # Build Frontend (v1.0.1 - Fixed localhost URLs)
 echo "Building frontend..."
 cd frontend
+
+# Set frontend API URL for production build
+export VITE_API_URL="${VITE_API_URL:-https://securecrop.onrender.com/api}"
+
 npm install
 npm run build
 cd ..
