@@ -292,7 +292,6 @@ class PasswordResetRequestView(APIView):
                 
                 try:
                     import resend
-                    from django.conf import settings
                     
                     resend.api_key = os.getenv('RESEND_API_KEY', settings.EMAIL_HOST_PASSWORD)
                     
