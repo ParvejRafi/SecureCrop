@@ -280,11 +280,15 @@ class PasswordResetRequestView(APIView):
             frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:5173'
             reset_link = f"{frontend_url}/reset-password?token={reset_token.token}"
             
-            # Send email
+            # Send email with better error handling
+            email_sent = False
+            error_message = None
+            
             try:
-                send_mail(
-                    subject='Password Reset Request - SecureCrop',
-                    message=f"""
+                from django.core.mail import EmailMessage
+                
+                # Create email with HTML content
+                email_body = f"""
 Hello {user.username},
 
 You have requested to reset your password for your SecureCrop account.
@@ -298,23 +302,43 @@ If you didn't request this password reset, please ignore this email.
 
 Best regards,
 SecureCrop Team
-                    """,
+                """
+                
+                # Try to send email
+                email_message = EmailMessage(
+                    subject='Password Reset Request - SecureCrop',
+                    body=email_body,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=False,
+                    to=[user.email],
                 )
+                email_message.send(fail_silently=False)
+                email_sent = True
+                print(f"✅ Password reset email sent successfully to {user.email}")
+                
             except Exception as e:
-                # Log error but don't reveal it to user
-                print(f"Error sending password reset email: {e}")
-                # In development, print the reset link
+                error_message = str(e)
+                print(f"❌ Error sending password reset email to {user.email}: {error_message}")
+                print(f"Email settings - HOST: {settings.EMAIL_HOST}, PORT: {settings.EMAIL_PORT}")
+                print(f"Email settings - USER: {settings.EMAIL_HOST_USER}, USE_TLS: {settings.EMAIL_USE_TLS}")
+                
+                # In development or if email fails, print the reset link
                 if settings.DEBUG:
-                    print(f"Password reset link: {reset_link}")
+                    print(f"🔗 Password reset link: {reset_link}")
             
             # Always return success to prevent email enumeration
-            return Response({
+            # But include debug info in development
+            response_data = {
                 'message': 'If your email is registered, you will receive a password reset link shortly.',
-                'debug_link': reset_link if settings.DEBUG else None  # Only in development
-            }, status=status.HTTP_200_OK)
+            }
+            
+            # Add debug info in development
+            if settings.DEBUG:
+                response_data['debug_link'] = reset_link
+                response_data['email_sent'] = email_sent
+                if error_message:
+                    response_data['email_error'] = error_message
+            
+            return Response(response_data, status=status.HTTP_200_OK)
             
         except User.DoesNotExist:
             # Return same message to prevent email enumeration

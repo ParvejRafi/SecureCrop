@@ -222,6 +222,10 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@securecrop.com')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@securecrop.com')
 
+# Server email for error reporting
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_TIMEOUT = 30  # 30 seconds timeout
+
 # Frontend URL for password reset links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
