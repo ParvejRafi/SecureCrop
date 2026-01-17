@@ -263,86 +263,98 @@ class PasswordResetRequestView(APIView):
     permission_classes = (AllowAny,)
     
     def post(self, request):
-        serializer = PasswordResetRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        email = serializer.validated_data['email']
-        
         try:
-            user = User.objects.get(email=email, is_active=True)
+            serializer = PasswordResetRequestSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
             
-            # Invalidate old tokens for this user
-            PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
-            
-            # Create new reset token
-            reset_token = PasswordResetToken.create_token(user)
-            
-            # Build reset link
-            frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:5173'
-            reset_link = f"{frontend_url}/reset-password?token={reset_token.token}"
-            
-            # Save reset link to database (for admin viewing)
-            reset_token.reset_link = reset_link
-            reset_token.save()
-            
-            # Send email with Resend (works on Render free tier)
-            email_sent = False
-            error_message = None
+            email = serializer.validated_data['email']
             
             try:
-                import resend
-                from django.conf import settings
+                user = User.objects.get(email=email, is_active=True)
                 
-                resend.api_key = os.getenv('RESEND_API_KEY', settings.EMAIL_HOST_PASSWORD)
+                # Invalidate old tokens for this user
+                PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
                 
-                params = {
-                    "from": settings.DEFAULT_FROM_EMAIL,
-                    "to": [user.email],
-                    "subject": "Password Reset Request - SecureCrop",
-                    "html": f"""
-                    <h2>Hello {user.username},</h2>
-                    <p>You have requested to reset your password for your SecureCrop account.</p>
-                    <p><a href="{reset_link}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Your Password</a></p>
-                    <p>Or copy this link: {reset_link}</p>
-                    <p>This link will expire in 1 hour.</p>
-                    <p>If you didn't request this password reset, please ignore this email.</p>
-                    <p>Best regards,<br>SecureCrop Team</p>
-                    """
+                # Create new reset token
+                reset_token = PasswordResetToken.create_token(user)
+                
+                # Build reset link
+                frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:5173'
+                reset_link = f"{frontend_url}/reset-password?token={reset_token.token}"
+                
+                # Save reset link to database (for admin viewing)
+                reset_token.reset_link = reset_link
+                reset_token.save()
+                
+                # Send email with Resend (works on Render free tier)
+                email_sent = False
+                error_message = None
+                
+                try:
+                    import resend
+                    from django.conf import settings
+                    
+                    resend.api_key = os.getenv('RESEND_API_KEY', settings.EMAIL_HOST_PASSWORD)
+                    
+                    params = {
+                        "from": settings.DEFAULT_FROM_EMAIL,
+                        "to": [user.email],
+                        "subject": "Password Reset Request - SecureCrop",
+                        "html": f"""
+                        <h2>Hello {user.username},</h2>
+                        <p>You have requested to reset your password for your SecureCrop account.</p>
+                        <p><a href="{reset_link}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Your Password</a></p>
+                        <p>Or copy this link: {reset_link}</p>
+                        <p>This link will expire in 1 hour.</p>
+                        <p>If you didn't request this password reset, please ignore this email.</p>
+                        <p>Best regards,<br>SecureCrop Team</p>
+                        """
+                    }
+                    
+                    email_result = resend.Emails.send(params)
+                    email_sent = True
+                    print(f"✅ Password reset email sent successfully to {user.email}")
+                    
+                except Exception as e:
+                    error_message = str(e)
+                    print(f"❌ Error sending password reset email to {user.email}: {error_message}")
+                    print(f"Email settings - FROM: {settings.DEFAULT_FROM_EMAIL}")
+                    import traceback
+                    traceback.print_exc()  # Print full traceback
+                    
+                    # In development or if email fails, print the reset link
+                    if settings.DEBUG:
+                        print(f"🔗 Password reset link: {reset_link}")
+                
+                # Always return success to prevent email enumeration
+                # But include debug info in development
+                response_data = {
+                    'message': 'If your email is registered, you will receive a password reset link shortly.',
                 }
                 
-                email_result = resend.Emails.send(params)
-                email_sent = True
-                print(f"✅ Password reset email sent successfully to {user.email}")
-                
-            except Exception as e:
-                error_message = str(e)
-                print(f"❌ Error sending password reset email to {user.email}: {error_message}")
-                print(f"Email settings - FROM: {settings.DEFAULT_FROM_EMAIL}")
-                
-                # In development or if email fails, print the reset link
+                # Add debug info in development
                 if settings.DEBUG:
-                    print(f"🔗 Password reset link: {reset_link}")
-            
-            # Always return success to prevent email enumeration
-            # But include debug info in development
-            response_data = {
-                'message': 'If your email is registered, you will receive a password reset link shortly.',
-            }
-            
-            # Add debug info in development
-            if settings.DEBUG:
-                response_data['debug_link'] = reset_link
-                response_data['email_sent'] = email_sent
-                if error_message:
-                    response_data['email_error'] = error_message
-            
-            return Response(response_data, status=status.HTTP_200_OK)
-            
-        except User.DoesNotExist:
-            # Return same message to prevent email enumeration
+                    response_data['debug_link'] = reset_link
+                    response_data['email_sent'] = email_sent
+                    if error_message:
+                        response_data['email_error'] = error_message
+                
+                return Response(response_data, status=status.HTTP_200_OK)
+                
+            except User.DoesNotExist:
+                # Return same message to prevent email enumeration
+                return Response({
+                    'message': 'If your email is registered, you will receive a password reset link shortly.'
+                }, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            # Catch any unexpected errors and log them
+            print(f"❌❌❌ CRITICAL ERROR in password reset: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response({
-                'message': 'If your email is registered, you will receive a password reset link shortly.'
-            }, status=status.HTTP_200_OK)
+                'error': 'An error occurred. Please try again later.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PasswordResetConfirmView(APIView):
