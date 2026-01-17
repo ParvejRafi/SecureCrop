@@ -293,6 +293,8 @@ class PasswordResetRequestView(APIView):
                 try:
                     import resend
                     
+                    # Note: In Resend testing mode, emails can only be sent to the account owner's email
+                    # To send to all users, verify a custom domain at resend.com/domains
                     resend.api_key = os.getenv('RESEND_API_KEY', settings.EMAIL_HOST_PASSWORD)
                     
                     params = {
