@@ -67,7 +67,7 @@ const ContactUs: React.FC = () => {
       
       // Also submit to Formspree for email notification backup
       try {
-        await fetch('https://formspree.io/f/xvzzrplo', {
+        await fetch('https://formspree.io/f/xdaazogg', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

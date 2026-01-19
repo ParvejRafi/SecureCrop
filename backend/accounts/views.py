@@ -314,14 +314,36 @@ class PasswordResetRequestView(APIView):
                     
                     email_result = resend.Emails.send(params)
                     email_sent = True
-                    print(f"✅ Password reset email sent successfully to {user.email}")
+                    print(f"✅ Password reset email sent successfully via Resend to {user.email}")
                     
                 except Exception as e:
                     error_message = str(e)
-                    print(f"❌ Error sending password reset email to {user.email}: {error_message}")
+                    print(f"❌ Error sending password reset email via Resend to {user.email}: {error_message}")
                     print(f"Email settings - FROM: {settings.DEFAULT_FROM_EMAIL}")
                     import traceback
                     traceback.print_exc()  # Print full traceback
+                    
+                    # Try Formspree as backup email delivery
+                    try:
+                        import requests
+                        formspree_response = requests.post(
+                            'https://formspree.io/f/xdaazogg',
+                            json={
+                                'email': user.email,
+                                'username': user.username,
+                                'reset_link': reset_link,
+                                'message': f'Password reset request for {user.username} ({user.email}). Reset link: {reset_link}',
+                                '_subject': f'Password Reset Request - SecureCrop - {user.email}',
+                            },
+                            timeout=10
+                        )
+                        if formspree_response.status_code == 200:
+                            email_sent = True
+                            print(f"✅ Password reset notification sent via Formspree backup for {user.email}")
+                        else:
+                            print(f"⚠️ Formspree backup also failed with status {formspree_response.status_code}")
+                    except Exception as formspree_error:
+                        print(f"⚠️ Formspree backup email failed: {formspree_error}")
                     
                     # In development or if email fails, print the reset link
                     if settings.DEBUG:
