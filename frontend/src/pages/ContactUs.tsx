@@ -61,8 +61,32 @@ const ContactUs: React.FC = () => {
     setSubmitStatus('idle');
 
     try {
+      // Submit to Django backend for storage and admin management
       const data = await contactAPI.submitInquiry(formData);
-      console.log('Inquiry submitted successfully:', data);
+      console.log('Inquiry submitted to Django backend:', data);
+      
+      // Also submit to Formspree for email notification backup
+      try {
+        await fetch('https://formspree.io/f/xvzzrplo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            subject: formData.subject,
+            message: formData.message,
+            category: formData.category,
+            _subject: `[SecureCrop] ${formData.category}: ${formData.subject}`,
+          }),
+        });
+        console.log('Inquiry also sent via Formspree');
+      } catch (formspreeError) {
+        console.warn('Formspree submission failed, but Django submission succeeded:', formspreeError);
+      }
+      
       setSubmitStatus('success');
 
       // Reset form after successful submission
