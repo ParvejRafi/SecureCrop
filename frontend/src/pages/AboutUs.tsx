@@ -329,22 +329,8 @@ const AboutUs: React.FC = () => {
                     <div className="absolute inset-0 bg-black opacity-10"></div>
                     <div className="relative z-10">
                       {/* Team Member Photo */}
-                      <div className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-white shadow-xl group-hover:scale-110 transition-transform duration-300 overflow-hidden bg-white">
-                        <img
-                          src={member.image}
-                          alt={member.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to icon if image not found
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const fallback = target.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.style.display = 'flex';
-                          }}
-                        />
-                        <div className="w-full h-full hidden items-center justify-center bg-white/20 backdrop-blur-sm">
-                          <Icon className="text-white" size={64} />
-                        </div>
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-white shadow-xl group-hover:scale-110 transition-transform duration-300 overflow-hidden flex items-center justify-center bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-sm">
+                        <Icon className="text-white" size={64} />
                       </div>
                       <h3 className="text-2xl font-bold text-white mb-2">{member.name}</h3>
                       <p className="text-green-100 font-medium text-sm uppercase tracking-wide">{member.role}</p>
