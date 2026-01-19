@@ -286,35 +286,19 @@ class PasswordResetRequestView(APIView):
                 reset_token.reset_link = reset_link
                 reset_token.save()
                 
-                # Send password reset email
+                # Send password reset email using Brevo API (HTTP - works on Render free tier)
                 email_sent = False
                 error_message = None
                 
                 try:
-                    from django.core.mail import EmailMultiAlternatives
+                    import requests
                     
-                    subject = "Password Reset Request - SecureCrop"
-                    from_email = settings.DEFAULT_FROM_EMAIL
-                    to_email = [user.email]
+                    # Use Brevo API instead of SMTP (Render blocks SMTP ports on free tier)
+                    brevo_api_key = os.getenv('BREVO_API_KEY')
                     
-                    # Plain text version
-                    text_content = f"""
-Hello {user.username},
-
-You have requested to reset your password for your SecureCrop account.
-
-Click the link below to reset your password:
-{reset_link}
-
-This link will expire in 1 hour.
-
-If you didn't request this password reset, please ignore this email.
-
-Best regards,
-SecureCrop Team
-                    """
+                    if not brevo_api_key:
+                        raise ValueError("BREVO_API_KEY not configured")
                     
-                    # HTML version
                     html_content = f"""
                     <!DOCTYPE html>
                     <html>
@@ -355,19 +339,35 @@ SecureCrop Team
                     </html>
                     """
                     
-                    # Create email with both plain text and HTML
-                    msg = EmailMultiAlternatives(subject, text_content, from_email, to_email)
-                    msg.attach_alternative(html_content, "text/html")
+                    # Send via Brevo HTTP API
+                    response = requests.post(
+                        'https://api.brevo.com/v3/smtp/email',
+                        headers={
+                            'accept': 'application/json',
+                            'api-key': brevo_api_key,
+                            'content-type': 'application/json'
+                        },
+                        json={
+                            'sender': {
+                                'name': 'SecureCrop',
+                                'email': 'mdparvej.ahmedrafi@student.aiu.edu.my'
+                            },
+                            'to': [{'email': user.email, 'name': user.username}],
+                            'subject': 'Password Reset Request - SecureCrop',
+                            'htmlContent': html_content
+                        },
+                        timeout=10
+                    )
                     
-                    # Send email
-                    msg.send(fail_silently=False)
-                    email_sent = True
-                    print(f"✅ Password reset email sent successfully to {user.email}")
+                    if response.status_code in [200, 201]:
+                        email_sent = True
+                        print(f"✅ Password reset email sent via Brevo API to {user.email}")
+                    else:
+                        raise Exception(f"Brevo API returned status {response.status_code}: {response.text}")
                     
                 except Exception as e:
                     error_message = str(e)
                     print(f"❌ Error sending password reset email to {user.email}: {error_message}")
-                    print(f"Email settings - FROM: {settings.DEFAULT_FROM_EMAIL}, Backend: {settings.EMAIL_BACKEND}")
                     import traceback
                     traceback.print_exc()
                     
