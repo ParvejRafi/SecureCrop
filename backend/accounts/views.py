@@ -286,64 +286,90 @@ class PasswordResetRequestView(APIView):
                 reset_token.reset_link = reset_link
                 reset_token.save()
                 
-                # Send email with Resend (works on Render free tier)
+                # Send password reset email
                 email_sent = False
                 error_message = None
                 
                 try:
-                    import resend
+                    from django.core.mail import EmailMultiAlternatives
                     
-                    # Note: In Resend testing mode, emails can only be sent to the account owner's email
-                    # To send to all users, verify a custom domain at resend.com/domains
-                    resend.api_key = os.getenv('RESEND_API_KEY', settings.EMAIL_HOST_PASSWORD)
+                    subject = "Password Reset Request - SecureCrop"
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    to_email = [user.email]
                     
-                    params = {
-                        "from": settings.DEFAULT_FROM_EMAIL,
-                        "to": [user.email],
-                        "subject": "Password Reset Request - SecureCrop",
-                        "html": f"""
-                        <h2>Hello {user.username},</h2>
-                        <p>You have requested to reset your password for your SecureCrop account.</p>
-                        <p><a href="{reset_link}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Your Password</a></p>
-                        <p>Or copy this link: {reset_link}</p>
-                        <p>This link will expire in 1 hour.</p>
-                        <p>If you didn't request this password reset, please ignore this email.</p>
-                        <p>Best regards,<br>SecureCrop Team</p>
-                        """
-                    }
+                    # Plain text version
+                    text_content = f"""
+Hello {user.username},
+
+You have requested to reset your password for your SecureCrop account.
+
+Click the link below to reset your password:
+{reset_link}
+
+This link will expire in 1 hour.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+SecureCrop Team
+                    """
                     
-                    email_result = resend.Emails.send(params)
+                    # HTML version
+                    html_content = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                            .header {{ background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                            .content {{ background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
+                            .button {{ display: inline-block; background-color: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }}
+                            .footer {{ text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }}
+                            .link {{ color: #10b981; word-break: break-all; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>🔒 Password Reset Request</h1>
+                            </div>
+                            <div class="content">
+                                <h2>Hello {user.username},</h2>
+                                <p>You have requested to reset your password for your SecureCrop account.</p>
+                                <p>Click the button below to reset your password:</p>
+                                <p style="text-align: center;">
+                                    <a href="{reset_link}" class="button">Reset Your Password</a>
+                                </p>
+                                <p>Or copy and paste this link into your browser:</p>
+                                <p class="link">{reset_link}</p>
+                                <p><strong>⏰ This link will expire in 1 hour.</strong></p>
+                                <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
+                            </div>
+                            <div class="footer">
+                                <p>Best regards,<br><strong>SecureCrop Team</strong></p>
+                                <p>🌾 Empowering Farmers with AI-Powered Agriculture</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    # Create email with both plain text and HTML
+                    msg = EmailMultiAlternatives(subject, text_content, from_email, to_email)
+                    msg.attach_alternative(html_content, "text/html")
+                    
+                    # Send email
+                    msg.send(fail_silently=False)
                     email_sent = True
-                    print(f"✅ Password reset email sent successfully via Resend to {user.email}")
+                    print(f"✅ Password reset email sent successfully to {user.email}")
                     
                 except Exception as e:
                     error_message = str(e)
-                    print(f"❌ Error sending password reset email via Resend to {user.email}: {error_message}")
-                    print(f"Email settings - FROM: {settings.DEFAULT_FROM_EMAIL}")
+                    print(f"❌ Error sending password reset email to {user.email}: {error_message}")
+                    print(f"Email settings - FROM: {settings.DEFAULT_FROM_EMAIL}, Backend: {settings.EMAIL_BACKEND}")
                     import traceback
-                    traceback.print_exc()  # Print full traceback
-                    
-                    # Try Formspree as backup email delivery
-                    try:
-                        import requests
-                        formspree_response = requests.post(
-                            'https://formspree.io/f/xdaazogg',
-                            json={
-                                'email': user.email,
-                                'username': user.username,
-                                'reset_link': reset_link,
-                                'message': f'Password reset request for {user.username} ({user.email}). Reset link: {reset_link}',
-                                '_subject': f'Password Reset Request - SecureCrop - {user.email}',
-                            },
-                            timeout=10
-                        )
-                        if formspree_response.status_code == 200:
-                            email_sent = True
-                            print(f"✅ Password reset notification sent via Formspree backup for {user.email}")
-                        else:
-                            print(f"⚠️ Formspree backup also failed with status {formspree_response.status_code}")
-                    except Exception as formspree_error:
-                        print(f"⚠️ Formspree backup email failed: {formspree_error}")
+                    traceback.print_exc()
                     
                     # In development or if email fails, print the reset link
                     if settings.DEBUG:
