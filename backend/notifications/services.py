@@ -5,9 +5,6 @@ Fetches real-time weather data for each user's location and sends personalized a
 import requests
 import os
 import threading
-from django.core.mail import EmailMultiAlternatives
-from django.utils.html import strip_tags
-from django.conf import settings
 from django.utils import timezone
 from dotenv import load_dotenv
 from accounts.models import User
@@ -252,6 +249,7 @@ def generate_weather_email_html(user, weather_data, alerts):
 def send_automated_weather_alert(user, alert_notification=None):
     """
     Send personalized weather alert email to a user based on their location.
+    Uses Brevo API for reliable email delivery.
     
     Args:
         user: User instance with location_lat and location_lon
@@ -272,7 +270,6 @@ def send_automated_weather_alert(user, alert_notification=None):
     
     # Generate email content
     html_content = generate_weather_email_html(user, weather_data, alerts)
-    text_content = strip_tags(html_content)
     
     # Create email log if alert notification provided
     email_log = None
@@ -285,31 +282,56 @@ def send_automated_weather_alert(user, alert_notification=None):
         )
     
     try:
-        # Create and send email
+        # Create and send email using Brevo API
         city = weather_data.get('city', 'Your Location') if weather_data else 'Your Location'
         subject = f"🌾 Weather Alert for {city} - SecureCrop"
         
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[user.email]
+        # Get Brevo API key
+        brevo_api_key = os.getenv('BREVO_API_KEY')
+        
+        if not brevo_api_key:
+            raise ValueError("BREVO_API_KEY not configured")
+        
+        # Send via Brevo HTTP API
+        response = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={
+                'accept': 'application/json',
+                'api-key': brevo_api_key,
+                'content-type': 'application/json'
+            },
+            json={
+                'sender': {
+                    'name': 'SecureCrop',
+                    'email': 'mdparvej.ahmedrafi@student.aiu.edu.my'
+                },
+                'to': [{'email': user.email, 'name': user.username}],
+                'subject': subject,
+                'htmlContent': html_content
+            },
+            timeout=10
         )
-        email.attach_alternative(html_content, "text/html")
-        email.send(fail_silently=False)
         
-        if email_log:
-            email_log.status = 'sent'
-            email_log.sent_at = timezone.now()
-            email_log.save()
-        
-        return email_log
+        if response.status_code in [200, 201]:
+            print(f"✅ Weather alert email sent via Brevo API to {user.email}")
+            if email_log:
+                email_log.status = 'sent'
+                email_log.sent_at = timezone.now()
+                email_log.save()
+                return email_log
+            else:
+                # Return a simple success indicator when no email_log is needed
+                return True
+        else:
+            raise Exception(f"Brevo API returned status {response.status_code}: {response.text}")
         
     except Exception as e:
+        print(f"❌ Error sending weather alert to {user.email}: {str(e)}")
         if email_log:
             email_log.status = 'failed'
             email_log.error_message = str(e)
             email_log.save()
+        
         return email_log
 
 

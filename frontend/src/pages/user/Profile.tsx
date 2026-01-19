@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,12 +12,10 @@ interface UserProfile {
   location_lon: number | null;
   receive_email_alerts: boolean;
   receive_sms_alerts: boolean;
-  profile_picture: string | null;
 }
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<UserProfile>({
     email: '',
     username: '',
@@ -26,11 +24,9 @@ const Profile: React.FC = () => {
     location_lon: null,
     receive_email_alerts: false,
     receive_sms_alerts: false,
-    profile_picture: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingPicture, setUploadingPicture] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
 
@@ -112,70 +108,7 @@ const Profile: React.FC = () => {
     );
   };
 
-  const handlePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: 'error', text: 'File too large. Maximum size is 5MB.' });
-      return;
-    }
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      setMessage({ type: 'error', text: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
-      return;
-    }
-
-    setUploadingPicture(true);
-    setMessage(null);
-
-    try {
-      const token = localStorage.getItem('access_token');
-      const formData = new FormData();
-      formData.append('picture', file);
-
-      const response = await axios.post(`${API_BASE}/auth/profile/picture/`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      setProfile({ ...profile, profile_picture: response.data.profile_picture });
-      setMessage({ type: 'success', text: 'Profile picture uploaded successfully!' });
-    } catch (error: any) {
-      console.error('Error uploading picture:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to upload picture' });
-    } finally {
-      setUploadingPicture(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleRemovePicture = async () => {
-    setUploadingPicture(true);
-    setMessage(null);
-
-    try {
-      const token = localStorage.getItem('access_token');
-      await axios.delete(`${API_BASE}/auth/profile/picture/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setProfile({ ...profile, profile_picture: null });
-      setMessage({ type: 'success', text: 'Profile picture removed successfully!' });
-    } catch (error: any) {
-      console.error('Error removing picture:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to remove picture' });
-    } finally {
-      setUploadingPicture(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -216,79 +149,6 @@ const Profile: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Profile Picture */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Profile Picture
-            </h2>
-
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              {/* Avatar Display */}
-              <div className="relative">
-                {profile.profile_picture ? (
-                  <img
-                    src={profile.profile_picture}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-emerald-200 shadow-lg"
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center border-4 border-emerald-200 shadow-lg">
-                    <span className="text-4xl font-bold text-white">
-                      {profile.username?.charAt(0)?.toUpperCase() || '?'}
-                    </span>
-                  </div>
-                )}
-                {uploadingPicture && (
-                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                  </div>
-                )}
-              </div>
-
-              {/* Upload Controls */}
-              <div className="flex flex-col gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  onChange={handlePictureUpload}
-                  className="hidden"
-                  id="profile-picture-input"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingPicture}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  {uploadingPicture ? 'Uploading...' : 'Upload Photo'}
-                </button>
-                {profile.profile_picture && (
-                  <button
-                    type="button"
-                    onClick={handleRemovePicture}
-                    disabled={uploadingPicture}
-                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Remove Photo
-                  </button>
-                )}
-                <p className="text-xs text-gray-500">
-                  Max 5MB. Supported: JPEG, PNG, GIF, WebP
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Account Information */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
